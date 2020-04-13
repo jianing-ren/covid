@@ -1,0 +1,60 @@
+---
+title: "covid2"
+author: "Jianing Ren"
+date: "12/04/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#construct original dataset and sort by state
+covid=read.csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+covid_by_state=covid[order(covid$state),]
+pop=read.csv("2018_us_pop_distr.csv",skip=2)
+pop=pop[2:53,]
+pop=pop[order(pop$Location),]
+```
+
+```{r}
+#remove extraneous states in covid_by_state
+for (i in levels(covid_by_state$state))
+{
+    if (i %in% levels(pop$Location)==F)
+    {
+        covid_by_state=covid_by_state[-which(covid_by_state$state==i),]
+    }
+    covid_by_state$state=factor(covid_by_state$state) #adjust the levels to reflect what was removed
+}
+```
+
+```{r}
+#calculate total cases for states
+
+getstatettl=function(st)
+{
+    max(covid_by_state[covid_by_state$state==st,]$cases)
+}
+
+state_sum=data.frame()
+for (i in levels(covid_by_state$state))
+{
+    state_sum=rbind(state_sum,data.frame(state=i,cases=getstatettl(i)))
+    
+}
+state_sum
+```
+
+```{r}
+#bind state 2018 pop to state_sum; get pct
+for (i in 1:nrow(state_sum))
+{
+    a=as.character(state_sum[i,1])
+    state_sum$pop[i]=pop[pop$Location==a,]$Total
+    state_sum$pct[i]=state_sum$cases[i]/state_sum$pop[i]*100
+}
+
+```
+
